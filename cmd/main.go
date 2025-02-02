@@ -19,7 +19,7 @@ import (
 func main() {
 	cfgYaml, err := config.ParseFromYaml()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Ошибка загрузки конфигурации: %v", err)
 	}
 
 	ctx := context.Background()
@@ -35,21 +35,24 @@ func main() {
 
 	// Получение токена доступа
 	client := getClient(ctx, cfg)
+	if client == nil {
+		log.Fatal("Ошибка получения клиента OAuth 2.0")
+	}
 
 	// Создание нового сервиса Gmail
 	srv, err := gmail.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
-		log.Fatalf("Unable to retrieve Gmail client: %v", err)
+		log.Fatalf("Ошибка создания сервиса Gmail: %v", err)
 	}
 
-	// Создание сообщения
-	to := "damirgarifullin7@gmail.com"
+	// Формирование письма
+	to := "galimardanova123@gmail.com"
 	subject := "Subject: Test Email"
 	body := "This is a test email sent from Go!"
 	message := []byte(fmt.Sprintf("To: %s\r\n%s\r\n\r\n%s", to, subject, body))
 
-	// Кодирование сообщения в base64
-	encodedMessage := base64.URLEncoding.EncodeToString(message)
+	// Правильное кодирование в Base64
+	encodedMessage := base64.StdEncoding.EncodeToString(message)
 
 	// Отправка письма
 	msg := &gmail.Message{
@@ -57,42 +60,55 @@ func main() {
 	}
 	_, err = srv.Users.Messages.Send("me", msg).Do()
 	if err != nil {
-		log.Fatalf("Unable to send email: %v", err)
+		log.Printf("Ошибка отправки письма: %v", err)
+		return
 	}
 
-	fmt.Println("Email sent successfully!")
+	fmt.Println("Email отправлен успешно!")
 }
 
 // getClient получает токен доступа, используя OAuth 2.0
 func getClient(ctx context.Context, config *oauth2.Config) *http.Client {
-	// Загружаем токен из файла, если он существует
 	tok, err := tokenFromFile("token.json")
 	if err != nil {
+		log.Println("Токен не найден, требуется авторизация.")
 		tok = getTokenFromWeb(config)
 		err := saveToken("token.json", tok)
 		if err != nil {
-			log.Print("Unable to save token:", err)
+			log.Printf("Ошибка сохранения токена: %v", err)
 			return nil
 		}
 	}
 	return config.Client(ctx, tok)
 }
 
-// getTokenFromWeb получает токен доступа от пользователя
 func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
-	// Генерируем URL для авторизации
+	// Создаем канал для передачи кода авторизации
+	codeChan := make(chan string)
+
+	// HTTP-сервер для обработки редиректа
+	http.HandleFunc("/oauth2callback", func(w http.ResponseWriter, r *http.Request) {
+		code := r.URL.Query().Get("code")
+		if code == "" {
+			http.Error(w, "Код авторизации не найден", http.StatusBadRequest)
+			return
+		}
+		fmt.Fprintln(w, "Авторизация успешна! Теперь вернитесь в консоль.")
+		codeChan <- code
+	})
+
+	go func() {
+		log.Fatal(http.ListenAndServe(":8080", nil)) // Запускаем сервер
+	}()
+
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
-	fmt.Printf("Перейдите по следующему URL для авторизации: \n%v\n", authURL)
+	fmt.Printf("Перейдите по ссылке для авторизации: %s\n", authURL)
 
-	// Получаем код авторизации от пользователя
-	var code string
-	fmt.Print("Введите код авторизации: ")
-	fmt.Scan(&code)
+	code := <-codeChan // Ждем код из канала
 
-	// Обмениваем код на токен
 	tok, err := config.Exchange(context.Background(), code)
 	if err != nil {
-		log.Fatalf("Unable to retrieve token from web: %v", err)
+		log.Fatalf("Ошибка обмена кода на токен: %v", err)
 	}
 	return tok
 }
@@ -104,8 +120,6 @@ func saveToken(filename string, token *oauth2.Token) error {
 		return err
 	}
 	defer f.Close()
-
-	// Кодируем токен в JSON и записываем в файл
 	return json.NewEncoder(f).Encode(token)
 }
 
