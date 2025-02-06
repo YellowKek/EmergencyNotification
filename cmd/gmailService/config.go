@@ -19,7 +19,7 @@ type Config struct {
 }
 
 func ParseFromYaml() (*Config, error) {
-	cfgPath := "configs/config.yaml"
+	cfgPath := "config.yaml"
 	if _, err := os.Stat(cfgPath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("config file not found: %s", cfgPath)
 	}

@@ -11,7 +11,7 @@ func main() {
 		logrus.Error(err)
 	}
 
-	err = sendEmail(service, "damirgarifullin7@gmail.com", "damirgarifullin7@gmail.com")
+	err = sendEmail(service, "damirgarifullin7@gmail.com", "ajnazahunov541@gmail.com")
 	if err != nil {
 		return
 	}
