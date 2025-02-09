@@ -1,0 +1,6 @@
+SMTP:
+  smtpHost: YourSMTPHost
+  smtpPort: YourPort
+  username: YourUsername
+  clientID: YourClientID
+  secretKey: YourSecretKey

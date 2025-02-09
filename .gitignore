@@ -26,5 +26,5 @@ go.work.sum
 
 
 config.yaml
-cmd/gmailService/token.json
+app/cmd/gmailService/token.json
 
