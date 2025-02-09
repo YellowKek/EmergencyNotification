@@ -81,7 +81,7 @@ func (r *UserRepositoryImpl) GetAll() ([]*model.User, error) {
 }
 
 func (r *UserRepositoryImpl) GetEmergencyGroups(userID int32) (map[string]string, error) {
-	rows, err := r.db.Query(`select * from emergency_groups where user_id = $1`, userID)
+	rows, err := r.db.Query(`select type, value from emergency_groups where user_id = $1`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -99,12 +99,13 @@ func (r *UserRepositoryImpl) GetEmergencyGroups(userID int32) (map[string]string
 }
 
 func (r *UserRepositoryImpl) GetById(id int32) (*model.User, error) {
-	row := r.db.QueryRow(`select * from users where id = $1`, id)
+	row := r.db.QueryRow(`select id, name, surname, email from users where id = $1`, id)
 	user := &model.User{}
-	err := row.Scan(&user.Id, &user.Name, &user.Surname, &user.Email, &user.Password)
+	err := row.Scan(&user.Id, &user.Name, &user.Surname, &user.Email)
 	if err != nil {
 		return nil, err
 	}
+	logrus.Print("returned user: %+v", user)
 	return user, nil
 }
 

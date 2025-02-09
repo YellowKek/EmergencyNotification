@@ -65,7 +65,7 @@ func SendEmail(srv *gmail.Service, sender, receiver string) error {
 	// Формирование письма
 	to := receiver
 	subject := fmt.Sprintf("ATTENTION!!! %s is in danger", sender)
-	body := "Contact the person immediately and call 911"
+	body := "Contact the person immediately and call 911" // Русский текст
 
 	// Создание MIME-сообщения
 	var buf bytes.Buffer
@@ -74,7 +74,7 @@ func SendEmail(srv *gmail.Service, sender, receiver string) error {
 	// Заголовки письма
 	headers := textproto.MIMEHeader{}
 	headers.Set("To", to)
-	headers.Set("Subject", subject)
+	headers.Set("Subject", "=?UTF-8?B?"+base64.StdEncoding.EncodeToString([]byte(subject))+"?=") // Кодируем заголовок
 	headers.Set("MIME-Version", "1.0")
 	headers.Set("Content-Type", fmt.Sprintf("multipart/alternative; boundary=%s", writer.Boundary()))
 

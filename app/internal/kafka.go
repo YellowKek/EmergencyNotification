@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-var kafkaBrokers = []string{"kafka:9092"}
+var kafkaBrokers = []string{"kafka:29091"}
 
 const EmailTopic = "email"
 
@@ -16,6 +16,7 @@ func SetupProducer() (sarama.AsyncProducer, error) {
 }
 
 func ProduceMessage(kafkaTopic string, producer sarama.AsyncProducer, message []byte, signals chan os.Signal) {
+	logrus.Print("sending message to kafka")
 	kafkaMessage := &sarama.ProducerMessage{
 		Topic: kafkaTopic,
 		Value: sarama.ByteEncoder(message),

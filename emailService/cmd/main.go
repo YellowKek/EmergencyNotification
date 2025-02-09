@@ -17,7 +17,7 @@ type Message struct {
 const KafkaTopic = "email"
 
 func main() {
-	consumer, err := sarama.NewConsumer([]string{"kafka:9092"}, nil)
+	consumer, err := sarama.NewConsumer([]string{"kafka:29091"}, nil)
 	if err != nil {
 		logrus.Fatalf("Error creating Sarama consumer: %v", err)
 	}
@@ -60,7 +60,6 @@ func NewMessageService() *MessageService {
 
 func (s *MessageService) ProcessMessage(msg *sarama.ConsumerMessage) {
 	s.mu.Lock()
-	log.Print("Message consumed: ", string(msg.Value))
 
 	var message Message
 	err := json.Unmarshal(msg.Value, &message)
@@ -68,6 +67,7 @@ func (s *MessageService) ProcessMessage(msg *sarama.ConsumerMessage) {
 		logrus.Print(err)
 		return
 	}
+	log.Print("Message consumed: ", string(msg.Value))
 
 	service, err := smtp.GetGmailService()
 	if err != nil {
@@ -78,5 +78,6 @@ func (s *MessageService) ProcessMessage(msg *sarama.ConsumerMessage) {
 	if err != nil {
 		return
 	}
+	logrus.Print("email sent")
 	s.mu.Unlock()
 }

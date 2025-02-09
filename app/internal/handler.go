@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/IBM/sarama"
 	"github.com/gofiber/fiber/v2"
+	"github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
 	"strings"
@@ -29,7 +30,7 @@ func (h *EmergencyHandler) EmergencyCall(c *fiber.Ctx) error {
 	if !exists {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"body user_id": nil})
 	}
-	
+
 	emergencyGroup, err := h.s.GetEmergencyGroups(userID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"getting emergency groups": err.Error()})
@@ -49,9 +50,10 @@ func (h *EmergencyHandler) EmergencyCall(c *fiber.Ctx) error {
 				Sender   string `json:"sender"`
 				Receiver string `json:"receiver"`
 			}{
-				Sender:   user.Name + user.Surname,
+				Sender:   user.Name + " " + user.Surname,
 				Receiver: value,
 			})
+			logrus.Print("message to receive: ", user.Name+" "+user.Surname, " ", value)
 			if err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"marshalling error": err.Error()})
 			}
