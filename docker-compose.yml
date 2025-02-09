@@ -1,54 +1,54 @@
 services:
-  #  zookeeper:
-  #    image: confluentinc/cp-zookeeper:7.3.2
-  #    hostname: zookeeper
-  #    container_name: zookeeper
-  #    ports:
-  #      - "2181:2181"
-  #    environment:
-  #      ZOOKEEPER_CLIENT_PORT: 2181
-  #      ZOOKEEPER_SERVER_ID: 1
-  #      ZOOKEEPER_SERVERS: zookeeper:2888:3888
-  #    networks:
-  #      - emergency-net
-  #
-  #  kafka:
-  #    image: confluentinc/cp-kafka:7.3.2
-  #    hostname: kafka
-  #    container_name: kafka
-  #    depends_on:
-  #      - zookeeper
-  #    ports:
-  #      - "9092:9092"
-  #    environment:
-  #      KAFKA_BROKER_ID: 1
-  #      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-  #      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-  #      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29091,PLAINTEXT_HOST://localhost:9092
-  #      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 5
-  #    healthcheck:
-  #      test: nc -z localhost 9092 || exit -1
-  #      interval: 10s
-  #      timeout: 60s
-  #      retries: 30
-  #    networks:
-  #      - emergency-net
-  #
-  #  kafka-ui:
-  #    container_name: kafka-ui
-  #    image: provectuslabs/kafka-ui:latest
-  #    ports:
-  #      - "9020:8080"
-  #    environment:
-  #      AUTH_TYPE: DISABLED
-  #      KAFKA_CLUSTERS_0_NAME: local
-  #      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29091
-  #      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
-  #    depends_on:
-  #      kafka:
-  #        condition: service_healthy
-  #    networks:
-  #      - emergency-net
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.2
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_SERVERS: zookeeper:2888:3888
+    networks:
+      - emergency-net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.2
+    hostname: kafka
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29091,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 5
+    healthcheck:
+      test: nc -z localhost 9092 || exit -1
+      interval: 10s
+      timeout: 60s
+      retries: 30
+    networks:
+      - emergency-net
+
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - "9020:8080"
+    environment:
+      AUTH_TYPE: DISABLED
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29091
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - emergency-net
 
 
   postgres:
@@ -89,6 +89,8 @@ services:
       context: app
     container_name: emergency-notification
     depends_on:
+      kafka:
+        condition: service_healthy
       postgres:
         condition: service_healthy
     ports:
@@ -96,14 +98,14 @@ services:
     networks:
       - emergency-net
 
-#  gmail:
-#    image: gmail-service
-#    build:
-#      context: gmailService/cmd
-#    container_name: gmailService
-#    depends_on:
-#      kafka:
-#        condition: service_healthy
+  email:
+    image: email-service
+    build:
+      context: emailService/cmd
+    container_name: emailService
+    depends_on:
+      kafka:
+        condition: service_healthy
 
 
 networks:

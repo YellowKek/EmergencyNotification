@@ -9,10 +9,11 @@ import (
 type UserRepository interface {
 	CreateTable() error
 	Create(user model.User) error
-	//GetById(id int32) (*model.User, error)
-	//GetEmergencyGroup(id int32) (map[string]string, error)
+	GetById(id int32) (*model.User, error)
 	GetByEmail(email string) (*model.User, error)
 	GetAll() ([]*model.User, error)
+	GetEmergencyGroups(userID int32) (map[string]string, error)
+	AddEmergencyGroup(userID int32, groupType, value string) error
 }
 
 type UserRepositoryImpl struct {
@@ -57,7 +58,7 @@ func (r *UserRepositoryImpl) Create(user model.User) error {
 func (r *UserRepositoryImpl) GetByEmail(email string) (*model.User, error) {
 	row := r.db.QueryRow(`select * from users where email = $1`, email)
 	user := &model.User{}
-	err := row.Scan(&user)
+	err := row.Scan(&user.Id, &user.Name, &user.Surname, &user.Email, &user.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +66,7 @@ func (r *UserRepositoryImpl) GetByEmail(email string) (*model.User, error) {
 }
 
 func (r *UserRepositoryImpl) GetAll() ([]*model.User, error) {
-	rows, err := r.db.Query("select * from users")
+	rows, err := r.db.Query(`select * from users`)
 	if err != nil {
 		return nil, err
 	}
@@ -77,4 +78,41 @@ func (r *UserRepositoryImpl) GetAll() ([]*model.User, error) {
 		users = append(users, user)
 	}
 	return users, nil
+}
+
+func (r *UserRepositoryImpl) GetEmergencyGroups(userID int32) (map[string]string, error) {
+	rows, err := r.db.Query(`select * from emergency_groups where user_id = $1`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	groups := make(map[string]string)
+	for rows.Next() {
+		var group, value string
+		err = rows.Scan(&group, &value)
+		if err != nil {
+			return nil, err
+		}
+		groups[group] = value
+	}
+	return groups, nil
+}
+
+func (r *UserRepositoryImpl) GetById(id int32) (*model.User, error) {
+	row := r.db.QueryRow(`select * from users where id = $1`, id)
+	user := &model.User{}
+	err := row.Scan(&user.Id, &user.Name, &user.Surname, &user.Email, &user.Password)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (r *UserRepositoryImpl) AddEmergencyGroup(userID int32, groupType, value string) error {
+	_, err := r.db.Exec(`insert into emergency_groups (user_id, type, value) values ($1, $2, $3)`, userID, groupType, value)
+	if err != nil {
+		return err
+	}
+	logrus.Print("inserted emergency group")
+	return nil
 }

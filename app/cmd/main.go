@@ -9,16 +9,18 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var kafkaBrokers = []string{"localhost:9092"}
-
-//const KafkaTopic =
-
 func main() {
 	logrus.Print("app start")
 	db, err := internal.NewDB()
 	if err != nil {
 		logrus.Fatal(err)
 	}
+
+	producer, err := internal.SetupProducer()
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	logrus.Print("producer start")
 
 	app := fiber.New()
 
@@ -31,8 +33,11 @@ func main() {
 	}
 
 	authHandler := &auth.AuthHandler{Storage: &auth.AuthStorage{UserService: userService}}
+	emergencyHandler := internal.NewEmergencyHandler(userService, producer)
 
 	app.Post("/register", authHandler.Register)
+	app.Post("/emergency", emergencyHandler.EmergencyCall)
+	app.Post("/addGroup", emergencyHandler.AddEmergencyGroup)
 
 	logrus.Fatal(app.Listen(":8080"))
 	if err != nil {

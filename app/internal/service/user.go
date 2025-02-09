@@ -28,3 +28,15 @@ func (s *UserService) CreateTables() error {
 func (s *UserService) GetAll() ([]*model.User, error) {
 	return s.r.GetAll()
 }
+
+func (s *UserService) GetEmergencyGroups(userID int32) (map[string]string, error) {
+	return s.r.GetEmergencyGroups(userID)
+}
+
+func (s *UserService) GetByID(userID int32) (*model.User, error) {
+	return s.r.GetById(userID)
+}
+
+func (s *UserService) AddEmergencyGroup(userID int32, groupType, value string) error {
+	return s.r.AddEmergencyGroup(userID, groupType, value)
+}
