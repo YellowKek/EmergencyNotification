@@ -4,15 +4,11 @@ import (
 	"encoding/json"
 	"github.com/IBM/sarama"
 	"github.com/sirupsen/logrus"
+	"gmailService/model"
 	"gmailService/smtp"
 	"log"
 	"sync"
 )
-
-type Message struct {
-	Sender   string
-	Receiver string
-}
 
 const KafkaTopic = "email"
 
@@ -61,7 +57,7 @@ func NewMessageService() *MessageService {
 func (s *MessageService) ProcessMessage(msg *sarama.ConsumerMessage) {
 	s.mu.Lock()
 
-	var message Message
+	var message model.KafkaMessage
 	err := json.Unmarshal(msg.Value, &message)
 	if err != nil {
 		logrus.Print(err)
@@ -74,7 +70,7 @@ func (s *MessageService) ProcessMessage(msg *sarama.ConsumerMessage) {
 		logrus.Error(err)
 	}
 
-	err = smtp.SendEmail(service, message.Sender, message.Receiver)
+	err = smtp.SendEmail(service, message)
 	if err != nil {
 		return
 	}

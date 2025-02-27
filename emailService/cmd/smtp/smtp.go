@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"gmailService/model"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/gmail/v1"
 	"google.golang.org/api/option"
@@ -41,7 +42,6 @@ func getCfgFromYaml() *Config {
 	return cfgYaml
 }
 
-// GetGmailService Создание нового сервиса Gmail
 func GetGmailService() (*gmail.Service, error) {
 	ctx := context.Background()
 	client, err := getClient(ctx, config)
@@ -61,11 +61,11 @@ func GetGmailService() (*gmail.Service, error) {
 
 // SendEmail TODO
 // исправить так чтобы вместо почты подставлялось имя при регистрации
-func SendEmail(srv *gmail.Service, sender, receiver string) error {
+func SendEmail(srv *gmail.Service, message model.KafkaMessage) error {
 	// Формирование письма
-	to := receiver
-	subject := fmt.Sprintf("ATTENTION!!! %s is in danger", sender)
-	body := "Contact the person immediately and call 911" // Русский текст
+	to := message.Receiver
+	subject := fmt.Sprintf("ATTENTION!!! %s is in danger", message.Sender)
+	body := fmt.Sprintf("Contact the person immediately (%s) and call 911\nThe address from which the message was sent: %s", message.Email, message.Location)
 
 	// Создание MIME-сообщения
 	var buf bytes.Buffer

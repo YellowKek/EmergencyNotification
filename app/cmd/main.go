@@ -38,6 +38,7 @@ func main() {
 	app.Post("/register", authHandler.Register)
 	app.Post("/emergency", emergencyHandler.EmergencyCall)
 	app.Post("/addGroup", emergencyHandler.AddEmergencyGroup)
+	app.Get("/getGroups", emergencyHandler.GetEmergencyGroups)
 
 	logrus.Fatal(app.Listen(":8080"))
 	if err != nil {

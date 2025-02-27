@@ -1,11 +1,13 @@
 package auth
 
 import (
+	"app/internal"
 	"app/internal/model"
 	"app/internal/service"
 	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -26,8 +28,10 @@ type RegisterRequest struct {
 }
 
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
+	logrus.Print("[AuthHandler] Register request")
 	regReq := RegisterRequest{}
 	if err := c.BodyParser(&regReq); err != nil {
+		logrus.Print(err.Error())
 		return fmt.Errorf("body parser: %w", err)
 	}
 	exists, _ := h.Storage.UserService.GetByEmail(regReq.Email)
@@ -35,22 +39,31 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	if exists != nil {
 		return errors.New("the user already exists")
 	}
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(regReq.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return fmt.Errorf("bcrypt hash: %w", err)
-	}
 
 	user := model.User{
 		Email:    regReq.Email,
 		Name:     regReq.Name,
 		Surname:  regReq.Surname,
-		Password: string(hashedPassword),
+		Password: regReq.Password,
 	}
 
-	err = h.Storage.UserService.CreateUser(user)
+	if !internal.ValidateUser(user) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid data"})
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(regReq.Password), bcrypt.DefaultCost)
 	if err != nil {
+		logrus.Print(err.Error())
+		return fmt.Errorf("bcrypt hash: %w", err)
+	}
+
+	user.Password = string(hashedPassword)
+
+	user, err = h.Storage.UserService.CreateUser(user)
+	if err != nil {
+		logrus.Print(err.Error())
 		return err
 	}
 
-	return c.SendStatus(fiber.StatusCreated)
+	return c.Status(fiber.StatusOK).JSON(user)
 }

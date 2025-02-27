@@ -8,7 +8,7 @@ import (
 
 type UserRepository interface {
 	CreateTable() error
-	Create(user model.User) error
+	Create(user model.User) (model.User, error)
 	GetById(id int32) (*model.User, error)
 	GetByEmail(email string) (*model.User, error)
 	GetAll() ([]*model.User, error)
@@ -42,17 +42,17 @@ func (r *UserRepositoryImpl) CreateTable() error {
 	return nil
 }
 
-func (r *UserRepositoryImpl) Create(user model.User) error {
+func (r *UserRepositoryImpl) Create(user model.User) (model.User, error) {
 	var userID int
 	err := r.db.QueryRow(`insert into users (name, surname, email, password) values ($1, $2, $3, $4) returning id;`,
 		user.Name, user.Surname, user.Email, user.Password).Scan(&userID) // Сохраняем ID нового пользователя
 	if err != nil {
-		return err
+		return model.User{}, err
 	}
 	user.Id = int32(userID)
 
-	logrus.Printf("Created user: %+v with ID: %d", user, userID)
-	return nil
+	logrus.Printf("Created user: %+v", user)
+	return user, nil
 }
 
 func (r *UserRepositoryImpl) GetByEmail(email string) (*model.User, error) {

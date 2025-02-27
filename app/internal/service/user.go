@@ -13,8 +13,12 @@ func NewUserService(r repository.UserRepository) *UserService {
 	return &UserService{r}
 }
 
-func (s *UserService) CreateUser(user model.User) error {
-	return s.r.Create(user)
+func (s *UserService) CreateUser(user model.User) (model.User, error) {
+	user, err := s.r.Create(user)
+	if err != nil {
+		return model.User{}, err
+	}
+	return user, nil
 }
 
 func (s *UserService) GetByEmail(email string) (*model.User, error) {
